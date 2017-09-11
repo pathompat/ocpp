@@ -1,4 +1,12 @@
 {
-    "name": "ocpp-server",
-    "version": "0.0.1"
-  }
+  "name": "ocpp-server",
+  "version": "0.0.1",
+  "description": "server test",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"/hello\"",
+    "start" : "node test.js"
+  },
+  "author": "mung",
+  "license": "ISC"
+}
