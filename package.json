@@ -5,8 +5,14 @@
   "main": "test.js",
   "scripts": {
     "test": "echo \"/hello\"",
-    "start" : "node test.js"
+    "start": "node test.js"
   },
   "author": "mung",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2",
+    "express-ws": "^3.0.0",
+    "mongodb": "^2.2.33",
+    "ws": "^3.1.0"
+  }
 }
