@@ -1,28 +1,21 @@
-var http = require('http');
-const WebSocket = require('ws');
-var autobahn = require('autobahn');
+var firebase = require("firebase");
+var config = {
+  apiKey: "AIzaSyDpBtpDYu0a4roRChP0yWBgAu9yPB3lrjc",
+  authDomain: "ocpp-database.firebaseapp.com",
+  databaseURL: "https://ocpp-database.firebaseio.com",
+  storageBucket: "ocpp-database.appspot.com",
+};
+firebase.initializeApp(config);
 
-var connection = new autobahn.Connection(
-  {
-    url: 'ws://127.0.0.1:8080/ocpp',
-    realm: 'realm1'
-  }
-);
+//Time use in Server
+var now = new Date();
 
-var packet = [
-   2, 
-   "19223201", 
-   "BootNotification",
- {"chargePointVendor": "VendorX", "chargePointModel": "SingleSocketCharger"} 
-] ;
+// Get a reference to the database service
+var database = firebase.database();
 
-connection.onopen = function (session) {
- //Call BootNotification
-session.call('com.myapp.boot', packet).then(
-  res => {
-    console.log(res);
-  }, session.log);
-}
-
-connection.open();
-//console.log(connection.transport);
+var ref = database.ref()
+ref.on("value", function(data) {
+  console.log(data.val());
+}, function (error) {
+  console.log("Error: " + error.code);
+});

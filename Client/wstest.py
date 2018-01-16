@@ -1,11 +1,12 @@
 from websocket import create_connection
 from datetime import datetime
 
-ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
-#ws = create_connection("ws://localhost/ocpp/CP001")
+#ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
+ws = create_connection("ws://localhost/ocpp/CP001")
 
 print("Sending Authorize.req ...")
-ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv", "Authorize",{"idTag":"D86F20CE"}]')
+ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv",'+
+        '"Authorize",{"idTag":"D86F20CE"}]')
 print("Recieved Authorize.con ...\n"+ws.recv())
 
 ##print("Sending StartTransaction.req ...")

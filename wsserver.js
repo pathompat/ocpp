@@ -1,21 +1,48 @@
 var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
+var firebase = require("firebase");
 
-function checkTag(payload){
-  if(payload.idTag == "D86F20CE"){
-    return "Accepted";
-  }else if (payload.idTag == "73A6F02D"){
-    return "Blocked";
-  }else{
-    return "Invalid";
-  }
+// Firebase config
+var config = {
+  apiKey: "AIzaSyDpBtpDYu0a4roRChP0yWBgAu9yPB3lrjc",
+  authDomain: "ocpp-database.firebaseapp.com",
+  databaseURL: "https://ocpp-database.firebaseio.com",
+  storageBucket: "ocpp-database.appspot.com",
+};
+firebase.initializeApp(config);
+
+// Get a reference to the database service
+var database = firebase.database();
+
+// Database Reference node
+//var ref = database.ref('authorize');
+
+//Time use in Server
+var now = new Date();
+console.log(now);
+
+function checkTag(payload,callback){
+  var ref = database.ref('/authorize').child(payload.idTag);
+  ref.on("value", function(data) {
+    if (data.val() == null){ callback("Invalid");}
+    else{
+      var expire = new Date(data.val().expiredate);
+      if(expire.getTime() < now.getTime()) callback("Expired");
+      else if(data.val().blocked) callback("Blocked");
+      else callback("Accepted");
+    }
+  }, function (error) {
+    console.log("Error: " + error.code);
+  });
 }
 
-function authorize(uniqueId,payload){
+function authorize(uniqueId,payload,callback){
   var package = {"idTagInfo":{"status" : null}};
-  package.idTagInfo.status = checkTag(payload);
-  return JSON.stringify([3,uniqueId,package])
+  checkTag(payload, status => {
+    package.idTagInfo.status = status;
+    callback(JSON.stringify([3,uniqueId,package]));
+  })
 }
 
 function startTransaction(uniqueId,payload){
@@ -42,35 +69,41 @@ function rpcFramework(uniqueId,payload,name){
 }
 
 app.ws('/ocpp/:id', function(ws, req) {
-  console.log(req.params.id);
+  console.log(req.params.id);   //show charge point's identity before
+
+  //Send message thru Web Socket Connection
+  function wssendback(package){
+    console.log('sent: %s',package);
+    ws.send(package);
+  }
+
+  //Check RPC message type
+  function checkRpc(json,callback,error){
+    if (json[0] == 2) callback(json[2]);
+    else if(json[0] == 3) error("it's a CALLRESULT.");
+    else error("it's not a RPC message.");
+  }
+
   ws.on('message', (mes) => {
-    console.log('received: %s', mes);
+    //console.log('received: %s', mes);
     var json = JSON.parse(mes);
-    if(json[0] == 2){
-      switch(json[2]) {
-        case "Authorize":
-          console.log('send: %s', authorize(json[1],json[3]));
-          ws.send(authorize(json[1],json[3]));
-          break;
-        case "StartTransaction":
-          ws.send(startTransaction(json[1],json[3]));
-          break;
-        case "StopTransaction":
-          ws.send(stopTransaction(json[1],json[3]));
-          break;
-        case "Heartbeat":
-          ws.send(heartbeat(json[1],json[3]));
-          break;
-        case "StatusNotification":
-          ws.send(rpcFramework(json[1],json[3],json[2]));
-          break;
-        case "MeterValues":
-          ws.send(rpcFramework(json[1],json[3],json[2]));
-          break;
-        default:
-          console.log("error");
+    checkRpc(JSON.parse(mes), function(messageType) {
+      switch(messageType) {
+        case "Authorize": authorize(json[1],json[3],wssendback);
+        break;
+        case "StartTransaction": ws.send(startTransaction(json[1],json[3]));
+        break;
+        case "StopTransaction": ws.send(stopTransaction(json[1],json[3]));
+        break;
+        case "Heartbeat": ws.send(heartbeat(json[1],json[3]));
+        break;
+        case "StatusNotification": ws.send(rpcFramework(json[1],json[3],json[2]));
+        break;
+        case "MeterValues": ws.send(rpcFramework(json[1],json[3],json[2]));
+        break;
+        default: console.log("error : Your message is not registered");
       }
-    }
+    }, function(err) { console.log(err); });
   });
 });
 
