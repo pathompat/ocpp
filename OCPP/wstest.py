@@ -39,8 +39,8 @@ ws = create_connection("ws://localhost/ocpp/CP001")
 # ws.send('[2, "ZeERlwkKOEdm9qaCnTUpDXI95bxr1ot3", "StatusNotification", {"status": "Available", "connectorId": 0, "errorCode": "NoError"}]')
 # print("Recieved StatusNotification.req ...\n"+ws.recv())
 
-print("Sending BootNotification.req ...")
-ws.send('[2, "uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ", "BootNotification", '+
-        '{"meterSerialNumber": "SN1234567", "chargePointModel": "KMUTNB", "chargePointVendor": "KMUTNB",'+ 
-        '"firmwareVersion": "1.0", "chargePointSerialNumber": "0102030405"}]')
-print("Recieved BootNotification.req ...\n"+ws.recv())
+# print("Sending BootNotification.req ...")
+# ws.send('[2, "uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ", "BootNotification", '+
+#         '{"meterSerialNumber": "SN1234567", "chargePointModel": "KMUTNB", "chargePointVendor": "KMUTNB",'+ 
+#         '"firmwareVersion": "1.0", "chargePointSerialNumber": "0102030405"}]')
+# print("Recieved BootNotification.req ...\n"+ws.recv())
