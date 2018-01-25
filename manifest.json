@@ -1,0 +1,6 @@
+{
+  "name": "charger",
+  "short_name": "charger",
+  "start_url": "/",
+  "display": "standalone"
+}

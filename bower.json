@@ -1,0 +1,17 @@
+{
+  "name": "charger",
+  "main": "index.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^2.0.0",
+    "app-layout": "PolymerElements/app-layout#^2.0.4",
+    "paper-icon-button": "PolymerElements/paper-icon-button#^2.0.1",
+    "paper-progress": "PolymerElements/paper-progress#^2.0.1",
+    "iron-icons": "PolymerElements/iron-icons#^2.0.1",
+    "iron-selector": "PolymerElements/iron-selector#^2.0.1",
+    "paper-item": "PolymerElements/paper-item#^2.0.0"
+  },
+  "devDependencies": {
+    "web-component-tester": "Polymer/web-component-tester#^6.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
+  }
+}

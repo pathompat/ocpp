@@ -145,11 +145,14 @@ function bootNotification(json,cpid,callback){
 app.ws('/ocpp/:id', function(ws, req) {
 
   var cpid = req.params.id;
-  console.log(cpid);   //show charge point's identity before
+  console.log(cpid);   //show charge point's identity
   
-  ws.on('message', (mes) => {
-    console.log('received: %s', mes);
+  ws.on('message', (mes) => {    //console.log('received: %s', mes);
+
+    //Parsing received message from String to JSON
     var json = JSON.parse(mes);
+    
+    //Check message format if it is RPC check message type
     checkRpc(json, function(messageType) {
       switch(messageType) {
         case "Authorize": authorize(json,wssendback);

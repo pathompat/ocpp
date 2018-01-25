@@ -1,0 +1,98 @@
+<script src="../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/app-layout/app-layout.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+
+<dom-module id="charger-app">
+  <template>
+    <style>
+      :host {
+        --app-primary-color: #4285f4;
+        --app-secondary-color: black;
+        display: block;
+      }
+      /* html, body {
+        margin: 0;
+        font-family: 'Roboto', 'Noto', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background: #f1f1f1;
+        max-height: 368px;
+      } */
+      app-header {
+        @apply --layout-fixed-top;
+        color: #fff;
+        background-color: var(--app-primary-color);
+      }
+      /* app-drawer {
+        --app-drawer-scrim-background: rgba(0, 0, 100, 0.8);
+        --app-drawer-content-container: {
+          background-color: #B0BEC5;
+        }
+      } */
+
+      paper-icon-button {
+      --paper-icon-button-ink-color: white;
+      }
+
+      paper-icon-button + [main-title] {
+        margin-left: 24px;
+      }
+
+      paper-item {
+        --paper-item-disabled-color : black;
+        /* color : grey; */
+      }
+    </style>
+    <app-header reveals>
+      <app-toolbar>
+        <paper-icon-button icon="menu" on-tap ="_drawer"></paper-icon-button>
+        <div main-title>EV Charger Station</div>
+        <paper-icon-button icon="supervisor-account"></paper-icon-button>
+        <!-- <paper-progress value="10" indeterminate bottom-item></paper-progress> -->
+      </app-toolbar>
+    </app-header>
+    <app-drawer id="drawer" swipe-open>
+        <paper-item disabled><b>Menu</b></paper-item>
+        <paper-item>About</paper-item>
+        <paper-item>Account/Billing</paper-item>
+        <paper-item>EV News</paper-item>
+        <paper-item>Find Station/Reserve on Maps</paper-item>
+        <paper-item>Request/Buy Station</paper-item>
+    </app-drawer>
+
+    <iron-pages selected="[[page]]" attr-for-selected="name">
+      <my-about name="view1"></my-view1>
+      <my-account name="view2"></my-view2>
+      <my-my-news name="view3"></my-view3>
+    </iron-pages>
+    <!-- <sample-content size="10"></sample-content> -->
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class ChargerApp extends Polymer.Element {
+      static get is() { return 'charger-app'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'charger-app'
+          }
+        };
+      }
+
+      _drawer(){
+        this.$.drawer.toggle();
+      }
+    }
+
+    window.customElements.define(ChargerApp.is, ChargerApp);
+  </script>
+</dom-module>
