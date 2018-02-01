@@ -2,6 +2,9 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 var firebase = require("firebase");
+var Queue = require('queuejs');
+ 
+var queue = new Queue();
 
 // Firebase config
 var config = {
@@ -142,6 +145,10 @@ function bootNotification(json,cpid,callback){
   //callback(JSON.stringify([3,json[1],package]));
 }
 
+function reserveNow(json,callback){
+  callback(JSON.stringify([3,"uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ",json]));
+}
+
 app.ws('/ocpp/:id', function(ws, req) {
 
   var cpid = req.params.id;
@@ -151,9 +158,16 @@ app.ws('/ocpp/:id', function(ws, req) {
 
     //Parsing received message from String to JSON
     var json = JSON.parse(mes);
+
+    //Webapp command
+    if(cpid == "webapp"){
+      queue.enq(json);
+      //console.log(queue);
+    }
     
     //Check message format if it is RPC check message type
     checkRpc(json, function(messageType) {
+      //console.log(queue);
       switch(messageType) {
         case "Authorize": authorize(json,wssendback);
         break;
@@ -161,7 +175,14 @@ app.ws('/ocpp/:id', function(ws, req) {
         break;
         case "StopTransaction": stopTransaction(json,wssendback);
         break;
-        case "Heartbeat": heartbeat(json,wssendback);
+        case "Heartbeat": 
+          console.log(queue);
+          if(!queue.isEmpty()){
+            if(queue.peek().cpid == cpid){
+              reserveNow(queue.deq(),wssendback);
+            }
+          }
+          heartbeat(json,wssendback);
         break;
         case "StatusNotification": statusNotification(json,cpid,wssendback);
         break;

@@ -1,13 +1,14 @@
 from websocket import create_connection
 from datetime import datetime
+import time
 
 #ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
 ws = create_connection("ws://localhost/ocpp/CP001")
 
-print("Sending Authorize.req ...")
-ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv",'+
-       '"Authorize",{"idTag":"D86F20CE"}]')
-print("Recieved Authorize.con ...\n"+ws.recv())
+# print("Sending Authorize.req ...")
+# ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv",'+
+#        '"Authorize",{"idTag":"D86F20CE"}]')
+# print("Recieved Authorize.con ...\n"+ws.recv())
 
 # print("Sending StartTransaction.req ...")
 # time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -26,9 +27,12 @@ print("Recieved Authorize.con ...\n"+ws.recv())
 #             '"idTag": "D86F20CE", "meterStop":11.2}]')
 # print("Recieved StartTransaction.req ...\n"+ws.recv())
 
-# print("Sending Heartbeat.req ...")
-# ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
-# print("Recieved Heartbeat.req ...\n"+ws.recv())
+while True:
+    print("Sending Heartbeat.req ...")
+    ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
+    print("Recieved Piggybacking data ...\n"+ws.recv())
+    print("Recieved Heartbeat.req ...\n"+ws.recv())
+    time.sleep(1)
 
 # print("Sending MeterValues.req ...")
 # ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "MeterValues",'+
