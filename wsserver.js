@@ -2,9 +2,9 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 var firebase = require("firebase");
-var Queue = require('queuejs');
+//var Queue = require('queuejs');
  
-var queue = new Queue();
+var list = [];
 
 // Firebase config
 var config = {
@@ -161,13 +161,13 @@ app.ws('/ocpp/:id', function(ws, req) {
 
     //Webapp command
     if(cpid == "webapp"){
-      queue.enq(json);
+      list.push(json);
       //console.log(queue);
     }
     
     //Check message format if it is RPC check message type
     checkRpc(json, function(messageType) {
-      //console.log(queue);
+      console.log(list);
       switch(messageType) {
         case "Authorize": authorize(json,wssendback);
         break;
@@ -176,11 +176,15 @@ app.ws('/ocpp/:id', function(ws, req) {
         case "StopTransaction": stopTransaction(json,wssendback);
         break;
         case "Heartbeat": 
-          console.log(queue);
-          if(!queue.isEmpty()){
-            if(queue.peek().cpid == cpid){
-              reserveNow(queue.deq(),wssendback);
-            }
+          //console.log(list);
+          if(list.length > 0){
+            list.find(function(data,index){
+              if(data.cpid == cpid) {
+                reserveNow(data,wssendback);
+                //console.log(index);
+                list.splice(index,1);
+              }
+            });
           }
           heartbeat(json,wssendback);
         break;
