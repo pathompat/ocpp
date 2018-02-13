@@ -176,12 +176,10 @@ app.ws('/ocpp/:id', function(ws, req) {
         case "StopTransaction": stopTransaction(json,wssendback);
         break;
         case "Heartbeat": 
-          //console.log(list);
           if(list.length > 0){
             list.find(function(data,index){
               if(data.cpid == cpid) {
                 reserveNow(data,wssendback);
-                //console.log(index);
                 list.splice(index,1);
               }
             });
