@@ -154,7 +154,9 @@ app.ws('/ocpp/:id', function(ws, req) {
   var cpid = req.params.id;
   console.log(cpid);   //show charge point's identity
   
-  ws.on('message', (mes) => {    //console.log('received: %s', mes);
+  ws.on('message', (mes) => {    
+    
+    console.log('received: %s', mes);
 
     //Parsing received message from String to JSON
     var json = JSON.parse(mes);

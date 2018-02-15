@@ -27,12 +27,12 @@ ws = create_connection("ws://localhost/ocpp/CP001")
 #             '"idTag": "D86F20CE", "meterStop":11.2}]')
 # print("Recieved StartTransaction.req ...\n"+ws.recv())
 
-while True:
-    print("Sending Heartbeat.req ...")
-    ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
-    print("Recieved Piggybacking data ...\n"+ws.recv())
-    print("Recieved Heartbeat.req ...\n"+ws.recv())
-    time.sleep(1)
+#while True:
+print("Sending Heartbeat.req ...")
+ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
+#print("Recieved Piggybacking data ...\n"+ws.recv())
+print("Recieved Heartbeat.req ...\n"+ws.recv())
+#    time.sleep(1)
 
 # print("Sending MeterValues.req ...")
 # ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "MeterValues",'+
