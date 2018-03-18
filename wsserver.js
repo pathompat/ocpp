@@ -111,10 +111,10 @@ function meterValues(json,cpid,callback){
   var payload = json[3];
   var conid = payload.connectorId;
   var ref = database.ref('/chargerstation').child(cpid).child("connector").child(conid);
+  callback(JSON.stringify([3,json[1],{}]));
   ref.update({
     "metervalue": payload.meterValue.sampledValue.value
   });
-  callback(JSON.stringify([3,json[1],{}]));
 }
 
 function statusNotification(json,cpid,callback){
@@ -164,7 +164,7 @@ app.ws('/ocpp/:id', function(ws, req) {
     //Webapp command
     if(cpid == "webapp"){
       list.push(json);
-      //console.log(queue);
+      //console.log(queue); 
     }
     
     //Check message format if it is RPC check message type
