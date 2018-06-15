@@ -7,7 +7,7 @@ ws = create_connection("ws://localhost/ocpp/webapp")
 
 #while True:
 ws.send('{"connectorid":0,'+
-        '"cpid":"CP001",'+
+        '"cpid":"1",'+
         '"expiryDate":"Sun Jan 14 2019 21:22:55 GMT+0700 (Local Standard Time)",'+
         '"idTag":"79DEF69"}')
 #time.sleep(5)

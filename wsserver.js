@@ -146,7 +146,7 @@ function bootNotification(json,cpid,callback){
 }
 
 function reserveNow(json,callback){
-  callback(JSON.stringify([3,"uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ",json]));
+  callback(JSON.stringify([2,"uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ","ReserveNow",json]));
 }
 
 app.ws('/ocpp/:id', function(ws, req) {
@@ -164,12 +164,12 @@ app.ws('/ocpp/:id', function(ws, req) {
     //Webapp command
     if(cpid == "webapp"){
       list.push(json);
-      //console.log(queue); 
+      //console.log(list); 
     }
     
     //Check message format if it is RPC check message type
     checkRpc(json, function(messageType) {
-      console.log(list);
+      //console.log(list);
       switch(messageType) {
         case "Authorize": authorize(json,wssendback);
         break;
