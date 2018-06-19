@@ -3,7 +3,7 @@ from datetime import datetime
 import time
 
 #ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
-ws = create_connection("ws://localhost/ocpp/1")
+ws = create_connection("ws://192.168.73.85/ocpp/1")
 
 # print("Sending Authorize.req ...")
 # ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv",'+
@@ -28,6 +28,7 @@ ws = create_connection("ws://localhost/ocpp/1")
 # print("Recieved StartTransaction.req ...\n"+ws.recv())
 
 #while True:
+print(ws)
 print("Sending Heartbeat.req ...")
 ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
 #print("Recieved Piggybacking data ...\n"+ws.recv())

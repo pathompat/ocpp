@@ -33,7 +33,7 @@ function checkTag(payload,callback){
       var expire = new Date(data.val().expiredate);
       if(expire.getTime() < now.getTime()) callback("Expired");
       else if(data.val().blocked) callback("Blocked");
-      else callback("Accepted");
+      else callback("Accepted",data.val().name,data.val().amount);
     }
   }, function (error) {
     console.log("Error: " + error.code);
@@ -42,14 +42,16 @@ function checkTag(payload,callback){
 
 function authorize(json,callback){
   var package = {"idTagInfo":{"status" : null}};
-  checkTag(json[3], status => {
+  checkTag(json[3], (status,name,amount) => {
     package.idTagInfo.status = status;
+    package.idTagInfo.name = name;
+    package.idTagInfo.amount = amount;
     callback(JSON.stringify([3,json[1],package]));
   })
 }
 
 function startTransaction(json,cpid,callback){
-  var package = {"idTagInfo":{"status":null},"transactionid":null};
+  var package = {"idTagInfo":{"status":null},"transactionId":null};
   var payload = json[3];
 
   var ref = database.ref('/transaction').orderByKey().limitToLast(1);
@@ -61,7 +63,7 @@ function startTransaction(json,cpid,callback){
       var transactionId = parseInt(childSnapshot.key)+1;
       checkTag(json[3], status => {
         package.idTagInfo.status = status;
-        package.transactionid = transactionId;
+        package.transactionId = transactionId;
         callback(JSON.stringify([3,json[1],package]));
       });
 
@@ -115,6 +117,7 @@ function meterValues(json,cpid,callback){
   ref.update({
     "metervalue": payload.meterValue.sampledValue.value
   });
+  
 }
 
 function statusNotification(json,cpid,callback){
