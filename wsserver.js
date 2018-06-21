@@ -148,10 +148,15 @@ function bootNotification(json,cpid,callback){
   //callback(JSON.stringify([3,json[1],package]));
 }
 
+function dataTransfer(json,cpid,callback){
+  var package = {};
+  //callback(JSON.stringify([3,json[1],package]));
+  //console.log(json[3].data);
+}
+
 function reserveNow(json,callback){
   callback(JSON.stringify([2,"uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ","ReserveNow",json]));
 }
-
 app.ws('/ocpp/:id', function(ws, req) {
 
   var cpid = req.params.id;
@@ -196,6 +201,8 @@ app.ws('/ocpp/:id', function(ws, req) {
         case "MeterValues": meterValues(json,cpid,wssendback);
         break;
         case "BootNotification" : bootNotification(json,cpid,wssendback);
+        break;
+        case "DataTransfer" : dataTransfer(json,cpid,wssendback);
         break;
         default: console.log("error : Your message is not registered");
       }
