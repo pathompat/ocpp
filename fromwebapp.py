@@ -3,7 +3,7 @@ from datetime import datetime
 import time
 
 #ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
-ws = create_connection("ws://localhost/ocpp/webapp")
+ws = create_connection("ws://192.168.73.87/ocpp/webapp")
 
 #while True:
 ws.send('{"connectorid":0,'+

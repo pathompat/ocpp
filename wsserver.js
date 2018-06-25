@@ -2,9 +2,8 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 var firebase = require("firebase");
-//var Queue = require('queuejs');
- 
-var list = [];
+var crypto = require("crypto");
+var sendList = [];
 
 // Firebase config
 var config = {
@@ -79,9 +78,7 @@ function startTransaction(json,cpid,callback){
 
       });
     });
-  },function (error) {
-    console.log("Error: " + error.code);
-  });
+  },function (error) {console.log("Error: " + error.code);});
 }
 
 function stopTransaction(json,callback){
@@ -96,10 +93,8 @@ function stopTransaction(json,callback){
   var ref = database.ref('/transaction').child(String(payload.transactionId)).child('stoptransaction');
 
   ref.update({
-     //stoptransaction : {
        timestop : payload.timestamp,
        meterstop : payload.meterStop
-     //}
   });
 }
 
@@ -109,7 +104,6 @@ function heartbeat(json,callback){
 }
 
 function meterValues(json,cpid,callback){
-  //var package = {}; 
   var payload = json[3];
   var conid = payload.connectorId;
   var ref = database.ref('/chargerstation').child(cpid).child("connector").child(conid);
@@ -123,9 +117,11 @@ function meterValues(json,cpid,callback){
 function statusNotification(json,cpid,callback){
   var payload = json[3];
   var conid = payload.connectorId;
+  //var errCode = payload.errorCode;
   var ref = database.ref('/chargerstation').child(cpid).child("connector").child(conid);
   ref.update({
-    "status": payload.status
+    "status": payload.status,
+    "errorCode" : payload.errorCode
   });
   callback(JSON.stringify([3,json[1],{}]));
 }
@@ -155,12 +151,14 @@ function dataTransfer(json,cpid,callback){
 }
 
 function reserveNow(json,callback){
-  callback(JSON.stringify([2,"uSf1t12mu6qNsE11NURHJIFXw3GdJDLJ","ReserveNow",json]));
+  //var package = {};
+  var uniqueId = crypto.randomBytes(20).toString('hex');
+  callback(uniqueId);
 }
 app.ws('/ocpp/:id', function(ws, req) {
 
   var cpid = req.params.id;
-  console.log(cpid);   //show charge point's identity
+  console.log('connected from : %s',cpid);   //show charge point's identity
   
   ws.on('message', (mes) => {    
     
@@ -168,12 +166,6 @@ app.ws('/ocpp/:id', function(ws, req) {
 
     //Parsing received message from String to JSON
     var json = JSON.parse(mes);
-
-    //Webapp command
-    if(cpid == "webapp"){
-      list.push(json);
-      //console.log(list); 
-    }
     
     //Check message format if it is RPC check message type
     checkRpc(json, function(messageType) {
@@ -187,14 +179,29 @@ app.ws('/ocpp/:id', function(ws, req) {
         break;
         case "Heartbeat": 
           heartbeat(json,wssendback);
-          if(list.length > 0){
-            list.find(function(data,index){
-              if(data.cpid == cpid) {
-                reserveNow(data,wssendback);
-                list.splice(index,1);
-              }
-            });
-          }
+          //var list = [];
+          var ref = database.ref("/reservation").orderByChild("status").equalTo("Pending");
+          ref.once("value", (snapshot) => {
+              snapshot.forEach( (childSnapshot) => {
+                  var key = childSnapshot.key;
+                  var childData = childSnapshot.val();
+                  if(childData.cpid == cpid) {
+                    reserveNow( json , uniqueId => {
+                        sendList.push([uniqueId,"ReserveNow",key]);
+                        //console.log(sendList);
+                        var data = { connectorId : childData.connectorId,
+                                    expiryDate : childData.expiryDate,
+                                    idTag : childData.idTag,
+                                    reservationId : childData.key
+                                  };
+                      var reserveNow = JSON.stringify([2,uniqueId,"ReserveNow",data]);
+                      console.log('sent : %s', reserveNow);
+                      ws.send(reserveNow);
+
+                    });
+                  }
+              });
+          }, function (err) {console.log("failed: "+err.code); });
         break;
         case "StatusNotification": statusNotification(json,cpid,wssendback);
         break;
@@ -206,7 +213,20 @@ app.ws('/ocpp/:id', function(ws, req) {
         break;
         default: console.log("error : Your message is not registered");
       }
-    }, function(err) { console.log(err); });
+    }, function(payload) {
+        if(sendList.length > 0){
+          sendList.find( (data,index) => {
+            if(data[0] == json[1]) {
+              //console.log("slice!!");
+              var ref = database.ref('/reservation').child(String(data[2]));
+              ref.update({
+                    status : payload.status,
+              });
+              sendList.splice(index,1);
+            }
+          });
+        }
+    });
   });
 
   //Send message thru Web Socket Connection
@@ -216,11 +236,11 @@ app.ws('/ocpp/:id', function(ws, req) {
   }
 
   //Check RPC message type
-  function checkRpc(json,callback,error){
-    if (json[0] == 2) callback(json[2]);
-    else if(json[0] == 3) error("it's a CALLRESULT.");
-    else if(json[0] == 4) error("Error Message!")
-    else error("it's not a RPC message.");
+  function checkRpc(json,call,callresult){
+    if (json[0] == 2) call(json[2]);
+    else if(json[0] == 3) callresult(json[2]);
+    else if(json[0] == 4) console.log("Error Message!")
+    else console.log("it's not a RPC message.");
   }
 
 });

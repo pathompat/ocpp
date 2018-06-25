@@ -11,9 +11,14 @@ firebase.initializeApp(config);
 
 // Get a reference to the database service
 var database = firebase.database();
-var ref = database.ref("/reservation");
+var ref = database.ref("/reservation").orderByChild("status").equalTo("Pending");
 
 // Attach an asynchronous callback to read the data at our posts reference
+//console.log(ref);
 ref.once("value", function(snapshot) {
-    console.log(snapshot.val());
+    snapshot.forEach(function(childSnapshot) {
+        var key = childSnapshot.key;
+        var childData = childSnapshot.val();
+        (childData);
+    });
 }, function (errorObject) {console.log("The read failed: " + errorObject.code); });

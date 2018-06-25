@@ -6,20 +6,20 @@ import json as js
 #ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
 ws = create_connection("ws://192.168.73.85/ocpp/1")
 
-while True:
-    x = int(input())
-    print("Sending Authorize.req ...")
-    if(x ==1):
-        ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv","Authorize",{"idTag":"D86F20CE"}]')
-    elif(x==2):
-        ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv","Authorize",{"idTag":"73A6F02D"}]')
-    else:
-        ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv","Authorize",{"idTag":"2A05D20F"}]')
-    jres = ws.recv()
-    #print("Recieved Authorize.con ...\n"+jres)
-    j = js.loads(jres)
-    print(j[2]["idTagInfo"])
-    time.sleep(1)
+# while True:
+#     x = int(input())
+#     print("Sending Authorize.req ...")
+#     if(x ==1):
+#         ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv","Authorize",{"idTag":"D86F20CE"}]')
+#     elif(x==2):
+#         ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv","Authorize",{"idTag":"73A6F02D"}]')
+#     else:
+#         ws.send('[2, "BQMYei0kseAoZ2aij7mbTs37UNGCFLhv","Authorize",{"idTag":"2A05D20F"}]')
+#     jres = ws.recv()
+#     #print("Recieved Authorize.con ...\n"+jres)
+#     j = js.loads(jres)
+#     print(j[2]["idTagInfo"])
+#     time.sleep(1)
 
 # print("Sending StartTransaction.req ...")
 # time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -39,11 +39,18 @@ while True:
 # print("Recieved StartTransaction.req ...\n"+ws.recv())
 
 #while True:
-#print("Sending Heartbeat.req ...")
-#ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
-#print("Recieved Piggybacking data ...\n"+ws.recv())
-#print("Recieved Heartbeat.req ...\n"+ws.recv())
-#    time.sleep(1)
+while int(input()) != 0:
+    print("Sending Heartbeat.req ...")
+    ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "Heartbeat",{}]')
+    #print("Recieved Piggybacking data ...\n"+ws.recv())
+    for i in range(2):
+        # print("Recieved Heartbeat.req ...\n"+ws.recv())
+        jres = ws.recv()
+        j = js.loads(jres)
+        #if(j[0] == 2):
+        print(j)
+    ws.send('[3, "'+j[1]+'",{"status":"Accepted"}]')
+    time.sleep(1)
 
 #print("Sending DataTransfer.req ...")
 #ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "DataTransfer",{"data":"D9213213$end"}]')
