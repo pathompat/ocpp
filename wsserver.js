@@ -150,7 +150,7 @@ function bootNotification(json,cpid,callback){
 
 function dataTransfer(json,cpid,callback){
   var package = {};
-  //callback(JSON.stringify([3,json[1],package]));
+  callback(JSON.stringify([3,json[1],package]));
   //console.log(json[3].data);
 }
 
@@ -186,6 +186,7 @@ app.ws('/ocpp/:id', function(ws, req) {
         case "StopTransaction": stopTransaction(json,wssendback);
         break;
         case "Heartbeat": 
+          heartbeat(json,wssendback);
           if(list.length > 0){
             list.find(function(data,index){
               if(data.cpid == cpid) {
@@ -194,7 +195,6 @@ app.ws('/ocpp/:id', function(ws, req) {
               }
             });
           }
-          heartbeat(json,wssendback);
         break;
         case "StatusNotification": statusNotification(json,cpid,wssendback);
         break;

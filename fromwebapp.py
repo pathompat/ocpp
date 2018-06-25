@@ -9,5 +9,5 @@ ws = create_connection("ws://localhost/ocpp/webapp")
 ws.send('{"connectorid":0,'+
         '"cpid":"1",'+
         '"expiryDate":"Sun Jan 14 2019 21:22:55 GMT+0700 (Local Standard Time)",'+
-        '"idTag":"79DEF69"}')
+        '"idTag":"D86F20CE"}')
 #time.sleep(5)
