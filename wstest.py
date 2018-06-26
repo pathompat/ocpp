@@ -4,7 +4,7 @@ import time
 import json as js
 
 #ws = create_connection("ocpp-server-mungyoyo.c9users.io:8000/ocpp/2")
-ws = create_connection("ws://192.168.73.85/ocpp/1")
+ws = create_connection("ws://192.168.73.85/ocpp/cp002")
 
 # while True:
 #     x = int(input())
@@ -47,10 +47,10 @@ while int(input()) != 0:
         # print("Recieved Heartbeat.req ...\n"+ws.recv())
         jres = ws.recv()
         j = js.loads(jres)
-        #if(j[0] == 2):
-        print(j)
-    ws.send('[3, "'+j[1]+'",{"status":"Accepted"}]')
-    time.sleep(1)
+        if(j[0] == 2):
+            print(j)
+            ws.send('[3, "'+j[1]+'",{"status":"Accepted"}]')
+    
 
 #print("Sending DataTransfer.req ...")
 #ws.send('[2, "xkgU2inssohvi7b3Im2BTjxZGkMEJgYk", "DataTransfer",{"data":"D9213213$end"}]')

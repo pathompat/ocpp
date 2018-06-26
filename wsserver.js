@@ -26,17 +26,18 @@ var now = new Date();
 
 function checkTag(payload,callback){
   var ref = database.ref('/authorize').child(payload.idTag);
-  ref.on("value", function(data) {
-    if (data.val() == null){ callback("Invalid");}
-    else{
-      var expire = new Date(data.val().expiredate);
-      if(expire.getTime() < now.getTime()) callback("Expired");
-      else if(data.val().blocked) callback("Blocked");
-      else callback("Accepted",data.val().name,data.val().amount);
-    }
-  }, function (error) {
-    console.log("Error: " + error.code);
-  });
+  try{
+    ref.on("value", function(data) {
+      if (data.val() == null){ callback("Invalid");}
+      else{
+        var expire = new Date(data.val().expiredate);
+        if(expire.getTime() < now.getTime()) callback("Expired");
+        else if(data.val().blocked) callback("Blocked");
+        else callback("Accepted",data.val().name,data.val().amount);
+      }
+    }, function (error) {console.log("Error: " + error.code); });
+  }catch(e){console.log(e);}
+
 }
 
 function authorize(json,callback){
@@ -181,24 +182,23 @@ app.ws('/ocpp/:id', function(ws, req) {
           heartbeat(json,wssendback);
           //var list = [];
           var ref = database.ref("/reservation").orderByChild("status").equalTo("Pending");
-          ref.once("value", (snapshot) => {
-              snapshot.forEach( (childSnapshot) => {
+          ref.once("value", function(snapshot) {
+              snapshot.forEach( function(childSnapshot){
                   var key = childSnapshot.key;
                   var childData = childSnapshot.val();
+                  console.log(key,childData);
                   if(childData.cpid == cpid) {
-                    reserveNow( json , uniqueId => {
+                     //console.log("test2");
+                     reserveNow( json , uniqueId => {
                         sendList.push([uniqueId,"ReserveNow",key]);
                         //console.log(sendList);
-                        var data = { connectorId : childData.connectorId,
-                                    expiryDate : childData.expiryDate,
-                                    idTag : childData.idTag,
-                                    reservationId : childData.key
-                                  };
-                      var reserveNow = JSON.stringify([2,uniqueId,"ReserveNow",data]);
-                      console.log('sent : %s', reserveNow);
-                      ws.send(reserveNow);
-
-                    });
+                        var data = { connectorId : childData.connectorId,expiryDate : childData.expiryDate,
+                        idTag : childData.idTag, reservationId : childData.key };
+                        var reserveNow = JSON.stringify([2,uniqueId,"ReserveNow",data]);
+                        console.log('sent : %s', reserveNow);
+                        ws.send(reserveNow);
+                           
+                     });
                   }
               });
           }, function (err) {console.log("failed: "+err.code); });
@@ -216,14 +216,15 @@ app.ws('/ocpp/:id', function(ws, req) {
     }, function(payload) {
         if(sendList.length > 0){
           sendList.find( (data,index) => {
-            if(data[0] == json[1]) {
-              //console.log("slice!!");
-              var ref = database.ref('/reservation').child(String(data[2]));
-              ref.update({
-                    status : payload.status,
-              });
-              sendList.splice(index,1);
-            }
+            try{
+              if(data[0] == json[1]) {
+                var ref = database.ref('/reservation').child(String(data[2]));
+                ref.update({
+                      status : payload.status,
+                });
+                sendList.splice(index,1);
+              }
+            }catch(e){console.log(e);}
           });
         }
     });
