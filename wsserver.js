@@ -156,6 +156,12 @@ function reserveNow(json,callback){
   var uniqueId = crypto.randomBytes(20).toString('hex');
   callback(uniqueId);
 }
+
+function cancelReservation(json,callback){
+  var uniqueId = crypto.randomBytes(20).toString('hex');
+  callback(uniqueId);
+}
+
 app.ws('/ocpp/:id', function(ws, req) {
 
   var cpid = req.params.id;
@@ -181,19 +187,19 @@ app.ws('/ocpp/:id', function(ws, req) {
         case "Heartbeat": 
           heartbeat(json,wssendback);
           //var list = [];
-          var ref = database.ref("/reservation").orderByChild("status").equalTo("Pending");
-          ref.once("value", function(snapshot) {
+          var refPending = database.ref("/reservation").orderByChild("status").equalTo("Pending");
+          refPending.once("value", function(snapshot) {
               snapshot.forEach( function(childSnapshot){
                   var key = childSnapshot.key;
                   var childData = childSnapshot.val();
-                  console.log(key,childData);
+                  //console.log(key,childData);
                   if(childData.cpid == cpid) {
                      //console.log("test2");
                      reserveNow( json , uniqueId => {
                         sendList.push([uniqueId,"ReserveNow",key]);
                         //console.log(sendList);
                         var data = { connectorId : childData.connectorId,expiryDate : childData.expiryDate,
-                        idTag : childData.idTag, reservationId : childData.key };
+                        idTag : childData.idTag, reservationId : key };
                         var reserveNow = JSON.stringify([2,uniqueId,"ReserveNow",data]);
                         console.log('sent : %s', reserveNow);
                         ws.send(reserveNow);
@@ -201,7 +207,27 @@ app.ws('/ocpp/:id', function(ws, req) {
                      });
                   }
               });
-          }, function (err) {console.log("failed: "+err.code); });
+
+          var refCancel = database.ref("/reservation").orderByChild("status").equalTo("Canceling");
+          refCancel.once("value", function(snapshot) {
+            snapshot.forEach( function(childSnapshot){
+              var key = childSnapshot.key;
+              var childData = childSnapshot.val();
+              //console.log(key,childData);
+              if(childData.cpid == cpid) {
+                  cancelReservation( json , uniqueId => {
+                    sendList.push([uniqueId,"CancelReservation",key]);
+                    //console.log(sendList);
+                    var data = { reservationId : key };
+                    var cancel = JSON.stringify([2,uniqueId,"CancelReservation",data]);
+                    console.log('sent : %s', cancel);
+                    ws.send(cancel);
+                  });
+              }
+            });
+          });
+          console.log(sendList);
+        }, function (err) {console.log("failed: "+err.code); });
         break;
         case "StatusNotification": statusNotification(json,cpid,wssendback);
         break;
@@ -218,10 +244,19 @@ app.ws('/ocpp/:id', function(ws, req) {
           sendList.find( (data,index) => {
             try{
               if(data[0] == json[1]) {
-                var ref = database.ref('/reservation').child(String(data[2]));
-                ref.update({
-                      status : payload.status,
-                });
+                console.log(1);
+                if(data[1] == "ReserveNow"){
+                  var ref = database.ref('/reservation').child(String(data[2]));
+                  ref.update({
+                        status : payload.status,
+                  });
+                }else if(data[1] == "CancelReservation"){
+                  console.log(2);
+                  var ref = database.ref('/reservation').child(String(data[2]));
+                  ref.update({
+                        status : "Canceled",
+                  });
+                }
                 sendList.splice(index,1);
               }
             }catch(e){console.log(e);}
@@ -242,6 +277,11 @@ app.ws('/ocpp/:id', function(ws, req) {
     else if(json[0] == 3) callresult(json[2]);
     else if(json[0] == 4) console.log("Error Message!")
     else console.log("it's not a RPC message.");
+  }
+
+  //Check Pending Status
+  function checkPending(){
+    //pass
   }
 
 });
