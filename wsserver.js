@@ -75,9 +75,17 @@ function startTransaction(json,cpid,callback){
         starttransaction : {
           timestart : payload.timestamp,
           meterstart : payload.meterStart 
-        }
-
+        },
+        //reservationId : (payload.reservationId == undefined || payload.reservationId == null) ? payload.reservationId : "0";
       });
+
+      //Update id has reservationId
+      if(payload.reservationId != undefined || payload.reservationId != null){
+        insertref.update({
+          reservationId : payload.reservationId
+        });
+      }
+
     });
   },function (error) {console.log("Error: " + error.code);});
 }
@@ -85,6 +93,7 @@ function startTransaction(json,cpid,callback){
 function stopTransaction(json,callback){
   var package = {"idTagInfo":{"status":null}};
   var payload = json[3];
+  var rid = 0;
 
   checkTag(json[3], status => {
     package.idTagInfo.status = status;
@@ -96,6 +105,18 @@ function stopTransaction(json,callback){
   ref.update({
        timestop : payload.timestamp,
        meterstop : payload.meterStop
+  });
+
+  var reserveRef = database.ref('/transaction').child(String(payload.transactionId));
+
+  reserveRef.once("value",(snap) =>{
+    var rid = snap.val().reservationId;
+    if(rid != null || rid != undefined){
+        database.ref('/reservation').child(String(rid)).update({
+            status : "Finished"
+        });
+        console.log("Reservation Finish!");
+    }
   });
 }
 
@@ -154,12 +175,12 @@ function dataTransfer(json,cpid,callback){
 function reserveNow(json,callback){
   //var package = {};
   var uniqueId = crypto.randomBytes(20).toString('hex');
-  callback(uniqueId);
+  callback(uniqueId,"ReserveNow",json);
 }
 
 function cancelReservation(json,callback){
   var uniqueId = crypto.randomBytes(20).toString('hex');
-  callback(uniqueId);
+  callback(uniqueId,"CancelReservation",json);
 }
 
 app.ws('/ocpp/:id', function(ws, req) {
@@ -186,48 +207,9 @@ app.ws('/ocpp/:id', function(ws, req) {
         break;
         case "Heartbeat": 
           heartbeat(json,wssendback);
-          //var list = [];
-          var refPending = database.ref("/reservation").orderByChild("status").equalTo("Pending");
-          refPending.once("value", function(snapshot) {
-              snapshot.forEach( function(childSnapshot){
-                  var key = childSnapshot.key;
-                  var childData = childSnapshot.val();
-                  //console.log(key,childData);
-                  if(childData.cpid == cpid) {
-                     //console.log("test2");
-                     reserveNow( json , uniqueId => {
-                        sendList.push([uniqueId,"ReserveNow",key]);
-                        //console.log(sendList);
-                        var data = { connectorId : childData.connectorId,expiryDate : childData.expiryDate,
-                        idTag : childData.idTag, reservationId : key };
-                        var reserveNow = JSON.stringify([2,uniqueId,"ReserveNow",data]);
-                        console.log('sent : %s', reserveNow);
-                        ws.send(reserveNow);
-                           
-                     });
-                  }
-              });
-
-          var refCancel = database.ref("/reservation").orderByChild("status").equalTo("Canceling");
-          refCancel.once("value", function(snapshot) {
-            snapshot.forEach( function(childSnapshot){
-              var key = childSnapshot.key;
-              var childData = childSnapshot.val();
-              //console.log(key,childData);
-              if(childData.cpid == cpid) {
-                  cancelReservation( json , uniqueId => {
-                    sendList.push([uniqueId,"CancelReservation",key]);
-                    //console.log(sendList);
-                    var data = { reservationId : key };
-                    var cancel = JSON.stringify([2,uniqueId,"CancelReservation",data]);
-                    console.log('sent : %s', cancel);
-                    ws.send(cancel);
-                  });
-              }
-            });
-          });
+          chkDatabase("Pending", reserveNow);
+          chkDatabase("Canceling" , cancelReservation);
           console.log(sendList);
-        }, function (err) {console.log("failed: "+err.code); });
         break;
         case "StatusNotification": statusNotification(json,cpid,wssendback);
         break;
@@ -240,28 +222,31 @@ app.ws('/ocpp/:id', function(ws, req) {
         default: console.log("error : Your message is not registered");
       }
     }, function(payload) {
-        if(sendList.length > 0){
-          sendList.find( (data,index) => {
-            try{
-              if(data[0] == json[1]) {
-                console.log(1);
-                if(data[1] == "ReserveNow"){
-                  var ref = database.ref('/reservation').child(String(data[2]));
-                  ref.update({
-                        status : payload.status,
-                  });
-                }else if(data[1] == "CancelReservation"){
-                  console.log(2);
-                  var ref = database.ref('/reservation').child(String(data[2]));
-                  ref.update({
-                        status : "Canceled",
-                  });
-                }
-                sendList.splice(index,1);
-              }
+          try{
+            if(sendList.length > 0){
+              sendList.find( (data,index) => {
+                  //Check UniqueId if match contunue check
+                  if(data[0] == json[1]) {
+
+                    //Check message if ReserveNow go update db Accepted/Error
+                    if(data[1] == "ReserveNow"){
+                      var ref = database.ref('/reservation').child(String(data[2]));
+                      ref.update({
+                            status : payload.status,
+                      });
+
+                    //Check message if CancelReservation go update db to Canceled
+                    }else if(data[1] == "CancelReservation"){
+                      var ref = database.ref('/reservation').child(String(data[2]));
+                      ref.update({
+                            status : "Canceled",
+                      });
+                    }
+                    sendList.splice(index,1); //Remove value in list after update
+                  }
+              });
+            }
             }catch(e){console.log(e);}
-          });
-        }
     });
   });
 
@@ -271,16 +256,60 @@ app.ws('/ocpp/:id', function(ws, req) {
     ws.send(package);
   }
 
+  function chkDatabase(status,sendMsg){
+    var refPending = database.ref("/reservation").orderByChild("status").equalTo(status);
+    refPending.once("value", function(snapshot) {
+        snapshot.forEach( function(childSnapshot){
+            var childData = childSnapshot.val();
+            childData.key = childSnapshot.key;
+            if(childData.cpid == cpid) {
+              sendMsg(childData, sendPiggyback);
+            }
+        });
+    }, function (err) {console.log("failed: "+err.code); });
+  }
+
+  // function chkCanceling(){ 
+  //   var refCancel = database.ref("/reservation").orderByChild("status").equalTo("Canceling");
+  //   refCancel.once("value", function(snapshot) {
+  //     snapshot.forEach( function(childSnapshot){
+  //       var childData = childSnapshot.val();
+  //       childData.key = childSnapshot.key;
+  //       if(childData.cpid == cpid) {
+  //           cancelReservation(childData, sendPiggyback);
+  //       }
+  //     });
+  //   }, function (err) {console.log("failed: "+err.code); });
+  // }
+
+  function sendPiggyback(uniqueId,messageName,data){
+    sendList.push([uniqueId,messageName,data.key]);
+    var payload = new Object();
+    switch(messageName) {
+      case "ReserveNow": payload = { connectorId : data.connectorId, expiryDate : data.expiryDate,
+                          idTag : data.idTag, reservationId : parseInt(data.key) };
+      break;
+      case "CancelReservation": payload = { reservationId : parseInt(data.key) };
+      break;
+      default: console.log("error : Your message is not registered");
+    }
+    var ocppmsg = JSON.stringify([2,uniqueId,messageName,payload]);
+    console.log('sent : %s', ocppmsg);
+    ws.send(ocppmsg);
+  }
+
   //Check RPC message type
   function checkRpc(json,call,callresult){
-    if (json[0] == 2) call(json[2]);
-    else if(json[0] == 3) callresult(json[2]);
-    else if(json[0] == 4) console.log("Error Message!")
-    else console.log("it's not a RPC message.");
+    try{
+      if (json[0] == 2) call(json[2]);
+      else if(json[0] == 3) callresult(json[2]);
+      else if(json[0] == 4) console.log("Error Message!")
+      else console.log("it's not a RPC message.");
+    }catch(err){console.log(err);}
   }
 
   //Check Pending Status
-  function checkPending(){
+  function checkDatabase(){
     //pass
   }
 
